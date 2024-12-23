@@ -58,7 +58,7 @@ summary_stats = pd.concat(summary_data, ignore_index=True)
 
 # Configure Streamlit page
 st.set_page_config(page_title="Test Group Analysis", page_icon="📊", layout="wide")
-st.title("📊 Interactive Test Group Analysis")
+st.title("📊 Real-time Balance Check of CMA Randomization")
 
 # Dropdown menu for selecting test group
 available_test_groups = summary_stats['test_group'].unique()
