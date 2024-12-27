@@ -3,6 +3,7 @@ import pandas as pd
 import altair as alt
 import requests
 import json
+import scipy.stats as stats
 
 # Fetch data from URL
 url = 'https://checkmyads.org/wp-content/themes/checkmyads/tracker-data.txt'
@@ -43,18 +44,31 @@ clean_tracker = clean_tracker.merge(test_group_pivot, on='uuid', how='left')
 
 # Group and summarize data for all test_group_v* dynamically
 summary_data = []
+p_values = []
 
 for test_group in test_group_pivot.columns[1:]:  # Skip 'uuid'
     filtered_data = clean_tracker[~clean_tracker[test_group].isna()]
     group_summary = filtered_data.groupby(test_group).agg(
-        num_uuid=('uuid', 'nunique'),  # Unique visitors in this group
-        num_sessions_mean=('sessionCount', 'mean'),  # Average session count
-        homepage_mean=('url', lambda x: x.eq('https://checkmyads.org/').mean())  # Homepage view rate
+        num_uuid=('uuid', 'nunique'),
+        num_sessions_mean=('sessionCount', 'mean'),
+        homepage_mean=('url', lambda x: x.eq('https://checkmyads.org/').mean())
     ).reset_index()
+
     group_summary['test_group'] = test_group
     summary_data.append(group_summary)
 
+    # Compute p-values between groups for key metrics
+    groups = filtered_data[test_group].unique()
+    if len(groups) > 1:
+        for i, g1 in enumerate(groups):
+            for g2 in groups[i+1:]:
+                g1_data = filtered_data[filtered_data[test_group] == g1]['sessionCount'].dropna()
+                g2_data = filtered_data[filtered_data[test_group] == g2]['sessionCount'].dropna()
+                t_stat, p_val = stats.ttest_ind(g1_data, g2_data, equal_var=False)
+                p_values.append({'test_group': test_group, 'group_pair': f"{g1}-{g2}", 'p_value': p_val})
+
 summary_stats = pd.concat(summary_data, ignore_index=True)
+p_values_df = pd.DataFrame(p_values)
 
 # Configure Streamlit page
 st.set_page_config(page_title="Test Group Analysis", page_icon="📊", layout="wide")
@@ -69,9 +83,28 @@ selected_test_group = st.selectbox(
 
 # Filter data for the selected test group
 filtered_data = summary_stats[summary_stats['test_group'] == selected_test_group]
+p_values_filtered = p_values_df[p_values_df['test_group'] == selected_test_group]
 filtered_data_display = filtered_data[[selected_test_group, 'num_uuid', 'num_sessions_mean', 'homepage_mean']]
 
-# Create bar chart
+# Display summary statistics
+st.subheader(f"Summary Statistics for {selected_test_group}")
+
+grid = st.columns(2)
+with grid[0]:
+    st.write(filtered_data[[selected_test_group, 'num_uuid', 'num_sessions_mean', 'homepage_mean']])
+
+with grid[1]:
+    st.write(p_values_filtered)
+    st.write(
+        """
+        - **num_uuid**: Number of visitors in each group  
+        - **num_sessions_mean**: Average number of sessions initiated by users  
+        - **homepage_mean**: Average percentage of page views as visiting homepage  
+        - **p_value**: Statistical significance between groups
+        """
+    )
+
+# Optional: Create bar chart
 bar_chart = (
     alt.Chart(filtered_data)
     .mark_bar()
@@ -89,17 +122,6 @@ bar_chart = (
     .properties(title=f"Number of UUIDs by Group in {selected_test_group}", height=400)
 )
 
-# Display bar chart in Streamlit
 st.altair_chart(bar_chart, use_container_width=True)
 
-# Optionally display summary table
-if st.checkbox("Show Summary Statistics Table"):
-    st.dataframe(filtered_data_display)
-    st.write(
-        """
-        - **num_uuid**: Number of visitors in each group  
-        - **num_sessions_mean**: Average number of sessions initiated by users  
-        - **homepage_mean**: Average percentage of page views as visiting homepage  
-        """
-    )
 
