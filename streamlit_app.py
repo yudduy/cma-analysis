@@ -65,7 +65,7 @@ def reorganize_p_values(p_values_filtered):
     wide_table = pd.pivot_table(
         p_values_filtered,
         values='p_value',
-        index='metric',
+        index='p value comparison',
         columns='group_pair',
         aggfunc='first'
     ).reset_index()
@@ -106,7 +106,7 @@ def calculate_uuid_p_values(test_group_pivot, clean_tracker):
                 p_values.append({
                     'test_group': test_group,
                     'group_pair': f"{g1}-{g2}",
-                    'metric': 'num_uuid',
+                    'p value comparison': 'num_uuid',
                     'p_value': p_val
                 })
 
