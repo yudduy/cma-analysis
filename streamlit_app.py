@@ -121,7 +121,7 @@ clean_tracker, page_view_data, test_group_pivot = create_pivot_and_filter(clean_
 
 # Compute statistics
 summary_stats = calculate_statistics(test_group_pivot, clean_tracker, page_view_data)
-summary_stats = summary_stats[summary_stats['num_uuid'] >= 10]  # Exclude small groups
+# summary_stats = summary_stats[summary_stats['num_uuid'] >= 10]  # Exclude small groups
 
 # Compute p-values for UUID distributions
 p_values_df = calculate_uuid_p_values(test_group_pivot, clean_tracker)
