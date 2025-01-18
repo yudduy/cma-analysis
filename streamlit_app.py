@@ -141,6 +141,7 @@ st.title("📊 Real-time Test Group Balance Check")
 
 # Dropdown for selecting test group
 available_test_groups = summary_stats['test_group'].unique()
+available_test_groups = available_test_groups[::-1]
 st.subheader("Select Test Group")
 selected_test_group = st.selectbox("Test Group:", options=available_test_groups)
 
