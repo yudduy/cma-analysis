@@ -1,5 +1,9 @@
 streamlit
 pandas
+numpy
 altair
 requests
 scipy
+itertools
+time
+json
