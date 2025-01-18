@@ -11,6 +11,7 @@ import pandas as pd
 import numpy as np
 import altair as alt
 import requests
+import time
 import json
 import itertools
 from scipy.stats import ttest_ind
@@ -197,11 +198,13 @@ def gen_output_tables(df, datetime_cols):
         # Display summary statistics
         st.subheader(f"Statistics for {caption_input}")
         if not summary_stats_col.empty:
+            summary_stats_col.reset_index(inplace=True, drop=True)
             st.write(summary_stats_col)
         else:
             st.write("No data available for the {caption_input}.")
         st.subheader(f"P-value comparison for {caption_input}")
         if not pairwise_p_values_col.empty:
+            pairwise_p_values_col.reset_index(inplace=True, drop=True)
             st.write(pairwise_p_values_col)
         else:
             st.write("No data available for the {caption_input}.")
@@ -209,6 +212,28 @@ def gen_output_tables(df, datetime_cols):
     return group_stats, pairwise_results_df
 
 
+def draw_streamlit_bar(selected_uuid_tracker):
+    summary_stats = calculate_statistics(selected_uuid_tracker)
+    filtered_data = summary_stats[['random_group', 'num_uuid']]
+
+    # Generate a bar chart
+    if not filtered_data.empty:
+        bar_chart = (
+            alt.Chart(filtered_data)
+            .mark_bar()
+            .encode(
+                x=alt.X('random_group:N', title='Group'),
+                y=alt.Y('num_uuid:Q', title='Number of UUIDs'),
+                tooltip=[col for col in filtered_data.columns if col != 'random_group']
+            )
+            .properties(title=f"Group Statistics ({selected_test_group})", height=400)
+        )
+        st.altair_chart(bar_chart, use_container_width=True)
+    else:
+        st.write("No data available for visualization.")
+
+
+# %%
 # URL for fetching data
 url = 'https://checkmyads.org/wp-content/themes/checkmyads/tracker-data.txt'
 clean_tracker = fetch_and_process_data(url)
@@ -222,33 +247,12 @@ available_test_groups = available_test_groups[::-1]
 # Streamlit application setup
 st.set_page_config(page_title="Enhanced Balance Check", page_icon="📊", layout="wide")
 st.title("📊 Real-time Balance Check")
-st.subheader("Select Test Group")
+st.subheader("Please select a randomization version we have tested 🔽")
 selected_test_group = st.selectbox("Test Group:", options=available_test_groups)
 selected_clean_tracker = clean_tracker[clean_tracker['test_group'] == selected_test_group]
 selected_uuid_tracker = process_event_data(selected_clean_tracker)
 
+draw_streamlit_bar(selected_uuid_tracker)
 group_stats, pairwise_results = gen_output_tables(
     selected_uuid_tracker, 
     datetime_cols = ['first_session_start_time', 'average_session_start_time', 'last_session_start_time'])
-
-
-summary_stats = calculate_statistics(selected_uuid_tracker)
-filtered_data = summary_stats[summary_stats['random_group'] == selected_test_group]
-
-# Generate a bar chart
-if not filtered_data.empty:
-    bar_chart = (
-        alt.Chart(filtered_data)
-        .mark_bar()
-        .encode(
-            x=alt.X('random_group:N', title='Group'),
-            y=alt.Y('num_uuid:Q', title='Number of UUIDs'),
-            tooltip=[col for col in filtered_data.columns if col != 'random_group']
-        )
-        .properties(title=f"Group Statistics ({selected_test_group})", height=400)
-    )
-    st.altair_chart(bar_chart, use_container_width=True)
-else:
-    st.write("No data available for visualization.")
-
-
