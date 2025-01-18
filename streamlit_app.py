@@ -121,7 +121,7 @@ clean_tracker, page_view_data, test_group_pivot = create_pivot_and_filter(clean_
 
 # Compute statistics
 summary_stats = calculate_statistics(test_group_pivot, clean_tracker, page_view_data)
-# summary_stats = summary_stats[summary_stats['num_uuid'] >= 10]  # Exclude small groups
+summary_stats = summary_stats[summary_stats['num_uuid'] >= 2]  # Exclude small groups
 
 # Compute p-values for UUID distributions
 p_values_df = calculate_uuid_p_values(test_group_pivot, clean_tracker)
@@ -173,7 +173,7 @@ if not filtered_data.empty:
         alt.Chart(filtered_data)
         .mark_bar()
         .encode(
-            x=alt.X('treatment:N', title='Treatment Group'),  # Ensure this matches your column name
+            x=alt.X('treatment:N', title='Treatment Group'),
             y=alt.Y('num_uuid:Q', title='Number of UUIDs'),
             tooltip=[
                 alt.Tooltip('treatment:N', title='Treatment Group'),
