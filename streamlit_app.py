@@ -233,7 +233,6 @@ def draw_streamlit_bar(selected_uuid_tracker):
         st.write("No data available for visualization.")
 
 
-# %%
 # URL for fetching data
 url = 'https://checkmyads.org/wp-content/themes/checkmyads/tracker-data.txt'
 clean_tracker = fetch_and_process_data(url)
@@ -256,8 +255,3 @@ draw_streamlit_bar(selected_uuid_tracker)
 group_stats, pairwise_results = gen_output_tables(
     selected_uuid_tracker, 
     datetime_cols = ['first_session_start_time', 'average_session_start_time', 'last_session_start_time'])
-
-
-# %%
-import pandas as pd
-print(pd.__version__)
