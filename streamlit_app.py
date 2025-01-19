@@ -245,7 +245,7 @@ available_test_groups = clean_tracker['test_group'].unique()
 available_test_groups = available_test_groups[::-1]
 
 # Streamlit application setup
-st.set_page_config(page_title="Enhanced Balance Check", page_icon="📊", layout="wide")
+st.set_page_config(page_title="CMA Balance Check", page_icon="📊", layout="wide")
 st.title("📊 Real-time Balance Check")
 st.subheader("Please select a randomization version we have tested 🔽")
 selected_test_group = st.selectbox("Test Group:", options=available_test_groups)
@@ -256,3 +256,8 @@ draw_streamlit_bar(selected_uuid_tracker)
 group_stats, pairwise_results = gen_output_tables(
     selected_uuid_tracker, 
     datetime_cols = ['first_session_start_time', 'average_session_start_time', 'last_session_start_time'])
+
+
+# %%
+import pandas as pd
+print(pd.__version__)
