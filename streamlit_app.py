@@ -146,20 +146,15 @@ def convert_datetime_back(group_stats, datetime_cols):
 def gen_output_tables(df, datetime_cols):
     # Convert datetime columns to numeric for calculations (seconds precision only)
     df = datetime_to_numeric(df, datetime_cols)
-    print(df.columns)
-    print(df['random_group'])
 
     # Select numeric columns only
     numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
-    print(numeric_cols)
-    print(df.columns)
     numeric_cols.remove('random_group')  # Exclude the grouping variable
     numeric_df = df[['random_group'] + numeric_cols]
-    print(df.columns)
 
     # Calculate mean and standard deviation by random group
     group_stats = numeric_df.groupby('random_group').agg(['mean', 'std'])
-    group_stats = convert_datetime_back(group_stats, datetime_cols)   # Apply the conversion back
+    group_stats = convert_datetime_back(group_stats, datetime_cols)  # Apply the conversion back
 
     # Prepare for pairwise comparisons
     groups = sorted(numeric_df['random_group'].unique())
@@ -169,7 +164,7 @@ def gen_output_tables(df, datetime_cols):
     for (group1, group2) in itertools.combinations(groups, 2):
         group1_data = numeric_df[numeric_df['random_group'] == group1]
         group2_data = numeric_df[numeric_df['random_group'] == group2]
-        
+
         for col in numeric_cols:
             stat, p_value = ttest_ind(group1_data[col].dropna(), group2_data[col].dropna(), equal_var=False)
             pairwise_results.append({'Characteristic': col, 
@@ -179,35 +174,44 @@ def gen_output_tables(df, datetime_cols):
 
     # Convert results to a dataframe
     pairwise_results_df = pd.DataFrame(pairwise_results)
-    
-    # Output LaTeX table
+
+    # Output tables in an enhanced layout
     for col in numeric_cols:
         # Extract summary statistics for the current characteristic
         summary_stats_col = group_stats[col].reset_index()
         summary_stats_col.columns = ['random_group', 'Mean', 'SD']
-        
+
         # Extract pairwise p-values for the current characteristic
         pairwise_p_values_col = pairwise_results_df[pairwise_results_df['Characteristic'] == col]
         pairwise_p_values_col = pairwise_p_values_col.drop(columns=['Characteristic'])
 
-        
-        # Save LaTeX files
-        # summary_stats_col.to_latex(f"{output_path}summary_{col}.tex", index=False)
-        # pairwise_p_values_col.to_latex(f"{output_path}pairwise_p_{col}.tex", index=False)
-        caption_input = col.replace("_", " ")
-        # Display summary statistics
-        st.subheader(f"Statistics for {caption_input}")
-        if not summary_stats_col.empty:
-            summary_stats_col.reset_index(inplace=True, drop=True)
-            st.write(summary_stats_col)
-        else:
-            st.write("No data available for the {caption_input}.")
-        st.subheader(f"P-value comparison for {caption_input}")
-        if not pairwise_p_values_col.empty:
-            pairwise_p_values_col.reset_index(inplace=True, drop=True)
-            st.write(pairwise_p_values_col)
-        else:
-            st.write("No data available for the {caption_input}.")
+        # Display both tables side by side
+        st.subheader(f"Statistics and P-value Comparison for {col.replace('_', ' ')}")
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown(f"**Summary Statistics**")
+            if not summary_stats_col.empty:
+                st.dataframe(summary_stats_col.style.set_table_styles(
+                    [
+                        {'selector': 'thead', 'props': [('background-color', '#f7f7f7'), ('text-align', 'center')]},
+                        {'selector': 'tbody tr:hover', 'props': [('background-color', '#eaf2ff')]}
+                    ]
+                ))
+            else:
+                st.write("No data available for this variable.")
+
+        with col2:
+            st.markdown(f"**P-value Comparison**")
+            if not pairwise_p_values_col.empty:
+                st.dataframe(pairwise_p_values_col.style.set_table_styles(
+                    [
+                        {'selector': 'thead', 'props': [('background-color', '#f7f7f7'), ('text-align', 'center')]},
+                        {'selector': 'tbody tr:hover', 'props': [('background-color', '#eaf2ff')]}
+                    ]
+                ))
+            else:
+                st.write("No data available for this variable.")
 
     return group_stats, pairwise_results_df
 
