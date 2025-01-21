@@ -184,7 +184,7 @@ def gen_output_tables(df, datetime_cols):
         # Extract pairwise p-values for the current characteristic
         pairwise_p_values_col = pairwise_results_df[pairwise_results_df['Characteristic'] == col]
         pairwise_p_values_col = pairwise_p_values_col.drop(columns=['Characteristic'])
-        pairwise_results_df.reset_index(drop=True, inplace=True)
+        pairwise_p_values_col.reset_index(drop=True, inplace=True)
 
         # Display both tables side by side
         st.subheader(f"Balance Check: {col.replace('_', ' ')}")
@@ -231,7 +231,7 @@ def draw_streamlit_bar(selected_uuid_tracker):
                 y=alt.Y('num_uuid:Q', title='Number of UUIDs'),
                 tooltip=[col for col in filtered_data.columns if col != 'random_group']
             )
-            .properties(title=f"Group Statistics ({selected_test_group})", height=400)
+            .properties(title=f"Number of Unique Visitors in Each Group for ({selected_test_group})", height=400)
         )
         st.altair_chart(bar_chart, use_container_width=True)
     else:
