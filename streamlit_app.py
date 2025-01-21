@@ -186,7 +186,7 @@ def gen_output_tables(df, datetime_cols):
         pairwise_p_values_col = pairwise_p_values_col.drop(columns=['Characteristic'])
 
         # Display both tables side by side
-        st.subheader(f"Statistics and P-value Comparison for {col.replace('_', ' ')}")
+        st.subheader(f"Balance Check: {col.replace('_', ' ')}")
         col1, col2 = st.columns(2)
 
         with col1:
