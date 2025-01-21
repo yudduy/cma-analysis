@@ -184,6 +184,7 @@ def gen_output_tables(df, datetime_cols):
         # Extract pairwise p-values for the current characteristic
         pairwise_p_values_col = pairwise_results_df[pairwise_results_df['Characteristic'] == col]
         pairwise_p_values_col = pairwise_p_values_col.drop(columns=['Characteristic'])
+        pairwise_results_df.reset_index(drop=True, inplace=True)
 
         # Display both tables side by side
         st.subheader(f"Balance Check: {col.replace('_', ' ')}")
