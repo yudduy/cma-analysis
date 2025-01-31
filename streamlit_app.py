@@ -16,15 +16,22 @@ import itertools
 from scipy.stats import ttest_ind
 from itertools import combinations
 
-# Function to fetch and process data from URL
-def fetch_and_process_data(url):
+@st.cache_data
+def fetch_data(url):
     response = requests.get(url)
     if response.status_code != 200:
         raise Exception(f"Failed to fetch data from {url}. HTTP Status Code: {response.status_code}")
+    return response.text
 
-    raw_data = [json.loads(line) for line in response.text.splitlines() if line.strip()]
-    clean_tracker = pd.json_normalize(raw_data)[['timestamp', 'uuid', 'event', 'data.group', 'data.url', 'data.sessionCount', 'data.referrer']]
-    clean_tracker.columns = ['timestamp', 'uuid', 'event', 'group', 'url', 'sessionCount', 'referrer']
+def fetch_and_process_data(url):
+    text_data = fetch_data(url)
+    raw_data = [
+        json.loads(line)
+        for line in text_data.splitlines() 
+        if line.strip()
+    ]
+    clean_tracker = pd.json_normalize(raw_data)[['timestamp','uuid','event','data.group','data.url','data.sessionCount','data.referrer']]
+    clean_tracker.columns = ['timestamp','uuid','event','group','url','sessionCount','referrer']
     clean_tracker['timestamp'] = pd.to_datetime(clean_tracker['timestamp'], errors='coerce', utc=True)
     return clean_tracker
 
