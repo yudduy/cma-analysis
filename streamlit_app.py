@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -31,9 +30,9 @@ def fetch_and_process_data(url):
 
 # Function to process the tracker data
 def process_clean_tracker(clean_tracker):
-    clean_tracker['test_group'] = clean_tracker['event'].str.extract(r'(test_group_v\d+)').ffill()
-    clean_tracker['test_group'].fillna('test_group_v1', inplace=True)
-    clean_tracker['random_group'] = clean_tracker.groupby(['uuid', 'test_group'])['group'].transform(lambda g: g.ffill().bfill())
+    clean_tracker['standard_group'] = clean_tracker['event'].str.extract(r'(group_v\d+)').ffill()
+    clean_tracker['standard_group'].fillna('group_v1', inplace=True)
+    clean_tracker['random_group'] = clean_tracker.groupby(['uuid', 'standard_group'])['group'].transform(lambda g: g.ffill().bfill())
     return clean_tracker
 
 # Function to calculate additional metrics
@@ -231,7 +230,7 @@ def draw_streamlit_bar(selected_uuid_tracker):
                 y=alt.Y('num_uuid:Q', title='Number of UUIDs'),
                 tooltip=[col for col in filtered_data.columns if col != 'random_group']
             )
-            .properties(title=f"Number of Unique Visitors in Each Group for ({selected_test_group})", height=400)
+            .properties(title=f"Number of Unique Visitors in Each Group for ({selected_standard_group})", height=400)
         )
         st.altair_chart(bar_chart, use_container_width=True)
     else:
@@ -245,15 +244,15 @@ clean_tracker = process_clean_tracker(clean_tracker)
 clean_tracker = clean_tracker[~clean_tracker['random_group'].isna()]
 
 # Dropdown for selecting test group
-available_test_groups = clean_tracker['test_group'].unique()
-available_test_groups = available_test_groups[::-1]
+available_standard_groups = clean_tracker['standard_group'].unique()
+available_standard_groups = available_standard_groups[::-1]
 
 # Streamlit application setup
 st.set_page_config(page_title="CMA Balance Check", page_icon="📊", layout="wide")
 st.title("📊 Real-time Balance Check")
 st.subheader("Please select a randomization version we have tested 🔽")
-selected_test_group = st.selectbox("Test Group:", options=available_test_groups)
-selected_clean_tracker = clean_tracker[clean_tracker['test_group'] == selected_test_group]
+selected_standard_group = st.selectbox("Test Group:", options=available_standard_groups)
+selected_clean_tracker = clean_tracker[clean_tracker['standard_group'] == selected_standard_group]
 selected_uuid_tracker = process_event_data(selected_clean_tracker)
 
 draw_streamlit_bar(selected_uuid_tracker)
