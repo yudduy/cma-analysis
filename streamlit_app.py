@@ -8,6 +8,7 @@ Integrated with Additional Indicators from balance_group_check.py
 import streamlit as st
 import pandas as pd
 import numpy as np
+import seaborn as sns
 import altair as alt
 import requests
 import time
@@ -53,6 +54,7 @@ def process_event_data(clean_tracker):
         random_group=('random_group', 'first'),
         num_sessions=('event', lambda x: count_event(x, 'session_start')),
         num_page_views=('event', lambda x: count_event(x, 'page_view')),
+        num_popup_views=('event', lambda x: count_event(x, 'popup_view')),
         num_referral=('event', lambda x: count_event(x, 'referral')),
         num_newsletter_signup=('event', lambda x: count_event(x, 'newsletter_signup')),
         num_donation=('event', lambda x: count_event(x, 'donation')),
@@ -237,6 +239,41 @@ def draw_streamlit_bar(selected_uuid_tracker):
         st.write("No data available for visualization.")
 
 
+def draw_popup_bar_charts(clean_tracker):
+    """绘制3x3的popup_view分布柱状图"""
+    popup_data = clean_tracker[clean_tracker['event'] == 'popup_view']
+    
+    if popup_data.empty:
+        st.write("No popup view events available.")
+        return
+    
+    popup_counts = popup_data.groupby(['standard_group', 'random_group']).size().reset_index(name='count')
+
+    # 计算有多少个 `group_v*`
+    unique_standard_groups = popup_counts['standard_group'].unique()
+    num_groups = len(unique_standard_groups)
+
+    fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(12, 12))
+    axes = axes.flatten()
+
+    for idx, standard_group in enumerate(unique_standard_groups[:9]):  # 最多显示9个
+        ax = axes[idx]
+        subset = popup_counts[popup_counts['standard_group'] == standard_group]
+
+        sns.barplot(
+            data=subset,
+            x='random_group', 
+            y='count',
+            ax=ax
+        )
+        ax.set_title(f"Popup Views in {standard_group}")
+        ax.set_xlabel("Popup ID (random_group)")
+        ax.set_ylabel("User Count")
+        ax.tick_params(axis='x', rotation=45)
+
+    plt.tight_layout()
+    st.pyplot(fig)
+
 # URL for fetching data
 url = 'https://checkmyads.org/wp-content/themes/checkmyads/tracker-data.txt'
 clean_tracker = fetch_and_process_data(url)
@@ -256,6 +293,7 @@ selected_clean_tracker = clean_tracker[clean_tracker['standard_group'] == select
 selected_uuid_tracker = process_event_data(selected_clean_tracker)
 
 draw_streamlit_bar(selected_uuid_tracker)
+draw_popup_bar_charts(selected_clean_tracker)
 group_stats, pairwise_results = gen_output_tables(
     selected_uuid_tracker, 
     datetime_cols = ['first_session_start_time', 'average_session_start_time', 'last_session_start_time'])
