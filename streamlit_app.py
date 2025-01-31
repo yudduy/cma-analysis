@@ -165,7 +165,7 @@ def gen_output_tables(df, datetime_cols):
         group2_data = numeric_df[numeric_df['random_group'] == group2]
 
         for col in numeric_cols:
-            stat, p_value = ttest_ind(group1_data[col].dropna(), group2_data[col].dropna(), equal_var=False)
+            stat, p_value = ttest_ind(group1_data[col].dropna(), group2_data[col].dropna(), equal_var=False, nan_policy='omit')
             pairwise_results.append({'Characteristic': col, 
                                      'Group 1': group1, 
                                      'Group 2': group2, 
