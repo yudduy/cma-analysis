@@ -294,7 +294,7 @@ selected_clean_tracker = clean_tracker[clean_tracker['standard_group'] == select
 selected_uuid_tracker = process_event_data(selected_clean_tracker)
 
 draw_streamlit_bar(selected_uuid_tracker)
-draw_popup_bar_charts(selected_clean_tracker)
+# draw_popup_bar_charts(selected_clean_tracker)
 group_stats, pairwise_results = gen_output_tables(
     selected_uuid_tracker, 
     datetime_cols = ['first_session_start_time', 'average_session_start_time', 'last_session_start_time'])
