@@ -20,7 +20,7 @@ from scipy.stats import ttest_ind
 from itertools import combinations
 
 # Function to fetch and process data from URL
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=300) # clear cache for every 5 minutes
 def fetch_and_process_data(url):
     response = requests.get(url)
     if response.status_code != 200:
@@ -244,22 +244,55 @@ def draw_streamlit_bar(selected_uuid_tracker):
 
 
 def draw_popup_bar_charts(clean_tracker):
-    """Draw popup_view distribution for selected group"""
-    popup_data = clean_tracker[clean_tracker['event'] == 'popup_view']
+    """Visualize popup version distribution within each treatment group"""
+    # Filter for popup_view events and relevant group assignments
+    popup_data = clean_tracker[
+        (clean_tracker['event'].isin(['popup_view', 'group_v1'])) & 
+        (clean_tracker['data.group'].notna())
+    ].copy()
     
     if popup_data.empty:
         st.write("No popup view events available.")
         return
     
-    popup_counts = popup_data.groupby('random_group').size().reset_index(name='count')
+    # Create popup version mapping
+    popup_map = {
+        '4217': '1 (Worthiness)',
+        '4221': '2 (Numbers)',
+        '4223': '3 (Control)'
+    }
     
-    chart = alt.Chart(popup_counts).mark_bar().encode(
-        x=alt.X('random_group:N', title='Random Group'),
+    # Extract and map popup versions
+    popup_data['popup_version'] = popup_data['data.popupId'].map(popup_map)
+    
+    # Get group assignments (group_v1 events)
+    group_assignments = popup_data[popup_data['event'] == 'group_v1'][['uuid', 'data.group']]
+    group_assignments.columns = ['uuid', 'treatment_group']
+    
+    # Merge popup views with group assignments
+    popup_views = popup_data[popup_data['event'] == 'popup_view'][['uuid', 'popup_version']]
+    merged = pd.merge(popup_views, group_assignments, on='uuid', how='inner')
+    
+    # Create count data
+    count_data = merged.groupby(['treatment_group', 'popup_version']).size().reset_index(name='count')
+    
+    # Create Altair chart
+    chart = alt.Chart(count_data).mark_bar().encode(
+        x=alt.X('treatment_group:N', title='Treatment Group'),
         y=alt.Y('count:Q', title='Number of Popup Views'),
-        tooltip=['random_group', 'count']
+        color=alt.Color('popup_version:N', title='Popup Version'),
+        tooltip=['treatment_group', 'popup_version', 'count']
     ).properties(
-        title=f"Popup Views by Random Group ({selected_standard_group})"
+        title=f"Popup Version Distribution by Treatment Group ({selected_standard_group})",
+        width=600
+    ).configure_legend(
+        titleFontSize=12,
+        labelFontSize=10
+    ).configure_axis(
+        titleFontSize=12,
+        labelFontSize=10
     )
+    
     st.altair_chart(chart, use_container_width=True)
 
 
