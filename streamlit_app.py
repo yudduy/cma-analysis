@@ -20,6 +20,7 @@ from scipy.stats import ttest_ind
 from itertools import combinations
 
 # Function to fetch and process data from URL
+@st.cache_data(ttl=300)
 def fetch_and_process_data(url):
     response = requests.get(url)
     if response.status_code != 200:
@@ -32,6 +33,7 @@ def fetch_and_process_data(url):
     return clean_tracker
 
 # Function to process the tracker data
+@st.cache_data
 def process_clean_tracker(clean_tracker):
     clean_tracker['standard_group'] = clean_tracker['event'].str.extract(r'(group_v\d+)').ffill()
     clean_tracker['standard_group'].fillna('group_v1', inplace=True)
