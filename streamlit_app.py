@@ -27,8 +27,22 @@ def fetch_and_process_data(url):
         raise Exception(f"Failed to fetch data from {url}. HTTP Status Code: {response.status_code}")
 
     raw_data = [json.loads(line) for line in response.text.splitlines() if line.strip()]
-    clean_tracker = pd.json_normalize(raw_data)[['timestamp', 'uuid', 'event', 'data.group', 'data.url', 'data.sessionCount', 'data.referrer']]
-    clean_tracker.columns = ['timestamp', 'uuid', 'event', 'group', 'url', 'sessionCount', 'referrer']
+    
+    # Extract relevant fields including popupId
+    clean_tracker = pd.json_normalize(raw_data)[[
+        'timestamp', 'uuid', 'event', 
+        'data.group', 'data.url', 
+        'data.sessionCount', 'data.referrer',
+        'data.popupId'  # Add popupId field
+    ]]
+    
+    # Rename columns appropriately
+    clean_tracker.columns = [
+        'timestamp', 'uuid', 'event',
+        'group', 'url', 'sessionCount',
+        'referrer', 'popupId'
+    ]
+    
     clean_tracker['timestamp'] = pd.to_datetime(clean_tracker['timestamp'], errors='coerce', utc=True)
     return clean_tracker
 
@@ -245,16 +259,16 @@ def draw_streamlit_bar(selected_uuid_tracker):
 
 def draw_popup_bar_charts(clean_tracker):
     """Visualize popup version distribution within each treatment group"""
-    # Filter for popup_view events and relevant group assignments
+    # Filter for relevant events
     popup_data = clean_tracker[
         (clean_tracker['event'].isin(['popup_view', 'group_v1'])) & 
-        (clean_tracker['data.group'].notna())
+        (clean_tracker['group'].notna())
     ].copy()
     
     if popup_data.empty:
         st.write("No popup view events available.")
         return
-    
+
     # Create popup version mapping
     popup_map = {
         '4217': '1 (Worthiness)',
@@ -262,14 +276,14 @@ def draw_popup_bar_charts(clean_tracker):
         '4223': '3 (Control)'
     }
     
-    # Extract and map popup versions
-    popup_data['popup_version'] = popup_data['data.popupId'].map(popup_map)
+    # Map popup versions
+    popup_data['popup_version'] = popup_data['popupId'].map(popup_map)
     
-    # Get group assignments (group_v1 events)
-    group_assignments = popup_data[popup_data['event'] == 'group_v1'][['uuid', 'data.group']]
+    # Get group assignments (treatment groups)
+    group_assignments = popup_data[popup_data['event'] == 'group_v1'][['uuid', 'group']]
     group_assignments.columns = ['uuid', 'treatment_group']
     
-    # Merge popup views with group assignments
+    # Merge with popup views
     popup_views = popup_data[popup_data['event'] == 'popup_view'][['uuid', 'popup_version']]
     merged = pd.merge(popup_views, group_assignments, on='uuid', how='inner')
     
@@ -285,12 +299,6 @@ def draw_popup_bar_charts(clean_tracker):
     ).properties(
         title=f"Popup Version Distribution by Treatment Group ({selected_standard_group})",
         width=600
-    ).configure_legend(
-        titleFontSize=12,
-        labelFontSize=10
-    ).configure_axis(
-        titleFontSize=12,
-        labelFontSize=10
     )
     
     st.altair_chart(chart, use_container_width=True)
