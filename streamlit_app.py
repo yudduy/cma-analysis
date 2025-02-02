@@ -5,6 +5,7 @@ Updated Streamlit App for Real-time Balance Check
 Integrated with Additional Indicators from balance_group_check.py
 """
 
+# %%
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -241,39 +242,24 @@ def draw_streamlit_bar(selected_uuid_tracker):
 
 
 def draw_popup_bar_charts(clean_tracker):
-    """绘制3x3的popup_view分布柱状图"""
+    """Draw popup_view distribution for selected group"""
     popup_data = clean_tracker[clean_tracker['event'] == 'popup_view']
     
     if popup_data.empty:
         st.write("No popup view events available.")
         return
     
-    popup_counts = popup_data.groupby(['standard_group', 'random_group']).size().reset_index(name='count')
+    popup_counts = popup_data.groupby('random_group').size().reset_index(name='count')
+    
+    chart = alt.Chart(popup_counts).mark_bar().encode(
+        x=alt.X('random_group:N', title='Random Group'),
+        y=alt.Y('count:Q', title='Number of Popup Views'),
+        tooltip=['random_group', 'count']
+    ).properties(
+        title=f"Popup Views by Random Group ({selected_standard_group})"
+    )
+    st.altair_chart(chart, use_container_width=True)
 
-    # 计算有多少个 `group_v*`
-    unique_standard_groups = popup_counts['standard_group'].unique()
-    num_groups = len(unique_standard_groups)
-
-    fig, axes = plt.subplots(nrows=3, ncols=3, figsize=(12, 12))
-    axes = axes.flatten()
-
-    for idx, standard_group in enumerate(unique_standard_groups[:9]):  # 最多显示9个
-        ax = axes[idx]
-        subset = popup_counts[popup_counts['standard_group'] == standard_group]
-
-        sns.barplot(
-            data=subset,
-            x='random_group', 
-            y='count',
-            ax=ax
-        )
-        ax.set_title(f"Popup Views in {standard_group}")
-        ax.set_xlabel("Popup ID (random_group)")
-        ax.set_ylabel("User Count")
-        ax.tick_params(axis='x', rotation=45)
-
-    plt.tight_layout()
-    st.pyplot(fig)
 
 # URL for fetching data
 url = 'https://checkmyads.org/wp-content/themes/checkmyads/tracker-data.txt'
@@ -294,7 +280,9 @@ selected_clean_tracker = clean_tracker[clean_tracker['standard_group'] == select
 selected_uuid_tracker = process_event_data(selected_clean_tracker)
 
 draw_streamlit_bar(selected_uuid_tracker)
-# draw_popup_bar_charts(selected_clean_tracker)
+draw_popup_bar_charts(selected_clean_tracker)
 group_stats, pairwise_results = gen_output_tables(
     selected_uuid_tracker, 
     datetime_cols = ['first_session_start_time', 'average_session_start_time', 'last_session_start_time'])
+
+# %%
