@@ -1,2 +1,2 @@
 
-A simple Streamlit app showing interactive log data.
+An interactive Streamlit application designed for real-time balance checks and newsletter signup analysis. 
