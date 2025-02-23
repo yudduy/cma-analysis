@@ -9,8 +9,13 @@ import streamlit as st
 from utils import *
 
 # STREAMLIT INTERFACE
-st.set_page_config(page_title="CMA Balance Check", page_icon="📊", layout="wide")
-st.title("📊 Real-time Balance Check")
+st.set_page_config(page_title="CMA Experiment", page_icon="📊", layout="wide")
+st.title("📊 CMA Experiment Monitor")
+
+st.write(f"Group 1 (Worthiness): Backed by the Ford Foundation: We are creating a healthier online ad ecosystem.")
+st.write(f"Group 2 (Numbers): A growing community of 50,000+ members: We are creating a healthier online ad ecosystem.")
+st.write(f"Group 3 (Watchdog): The digital advertising watchdog: We are creating a healthier online ad ecosystem.")
+st.write(f"Group 4 (Pure Control): We are creating a healthier online ad ecosystem.")
 
 # Fetch and process data
 url = 'https://checkmyads.org/wp-content/themes/checkmyads/tracker-data.txt'
